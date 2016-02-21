@@ -3,8 +3,8 @@
 /*
 Plugin Name: Force Strong Passwords
 Plugin URI: https://github.com/boogah/Force-Strong-Passwords/
-Description: Forces users to use something strong when updating their passwords.
-Version: 1.5.2
+Description: Forces privileged users to set a strong password.
+Version: 1.6.4
 Author: Jason Cosper
 Author URI: http://jasoncosper.com/
 License: GPLv2
@@ -34,6 +34,13 @@ if ( ! function_exists( 'add_action' ) ) {
 
 
 // Initialize constants
+
+// Our plugin
+define( 'FSP_PLUGIN_BASE', __FILE__ );
+
+// Allow changing the version number in only one place (the header above)
+$plugin_data = get_file_data( FSP_PLUGIN_BASE, array( 'Version' => 'Version' ) );
+define( 'FSP_PLUGIN_VERSION', $plugin_data['Version'] );
 
 /**
  * Use zxcvbn for versions 3.7 and above
@@ -79,9 +86,9 @@ function slt_fsp_init() {
 
 // Enqueue force zxcvbn check script
 function slt_fsp_enqueue_force_zxcvbn_script() {
-	wp_enqueue_script( 'slt-fsp-force-zxcvbn', plugins_url( 'force-zxcvbn.min.js', __FILE__ ), array( 'jquery' ), '1.0' );
+	wp_enqueue_script( 'slt-fsp-force-zxcvbn', plugins_url( 'force-zxcvbn.min.js', __FILE__ ), array( 'jquery' ), FSP_PLUGIN_VERSION );
 	// Also change hint
-	wp_enqueue_script( 'slt-fsp-admin-js', plugins_url( 'js-admin.min.js', __FILE__ ), array( 'jquery' ), '1.0' );
+	wp_enqueue_script( 'slt-fsp-admin-js', plugins_url( 'js-admin.min.js', __FILE__ ), array( 'jquery' ), FSP_PLUGIN_VERSION );
 }
 
 
@@ -133,8 +140,9 @@ function slt_fsp_validate_strong_password( $errors, $user_data ) {
 		if ( SLT_FSP_USE_ZXCVBN ) {
 
 			// Check the strength passed from the zxcvbn meter
-			$compare = html_entity_decode( __( 'Strong' ), ENT_QUOTES, 'UTF-8');
-			if ( ! empty( $_POST['slt-fsp-pass-strength-result'] ) && $_POST['slt-fsp-pass-strength-result'] != $compare ) {
+			$compare_strong = html_entity_decode( __( 'strong' ), ENT_QUOTES, 'UTF-8');
+			$compare_strong_reset = html_entity_decode( __( 'hide-if-no-js strong' ), ENT_QUOTES, 'UTF-8');
+			if ( ! in_array( $_POST['slt-fsp-pass-strength-result'] , array(null, $compare_strong, $compare_strong_reset ))) {
 				$password_ok = false;
 			}
 
